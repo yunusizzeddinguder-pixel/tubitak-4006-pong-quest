@@ -16,6 +16,8 @@ Kişiselleştirme: Kazanılan altınlarla shop üzerinden yeni skinler.
 
 🛠️ Kullanılan Teknolojiler
 
+
+Bu projeyi beğendiyseniz sağ üst köşeden Star ⭐ vererek destek olabilirsiniz!
 HTML5 Canvas
 
 Tailwind CSS
