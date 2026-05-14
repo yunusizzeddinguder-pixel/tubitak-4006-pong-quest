@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PONG QUEST ULTIMATE — POWER EDITION</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700;900&display=swap');
+    :root { 
+        --neon-cyan: #00f2ff; 
+        --gold: #ffd700;
+        --fire: #ff4500;
+        --panel: rgba(5, 10, 25, 0.98); 
+    }
+    body { margin: 0; min-height: 100vh; background: #000; color: #fff; font-family: 'Rajdhani', sans-serif; overflow: hidden; }
+    
+    @keyframes slightShake {
+        0% { transform: translate(1px, 1px) rotate(0deg); }
+        25% { transform: translate(-1px, -1px) rotate(-0.5deg); }
+        50% { transform: translate(1px, -1px) rotate(0.5deg); }
+        75% { transform: translate(-1px, 1px) rotate(-0.5deg); }
+        100% { transform: translate(0, 0) rotate(0deg); }
+    }
+    .canvas-shake { animation: slightShake 0.15s ease-in-out; }
+
+    canvas { 
+        display: block; 
+        width: 100%; 
+        max-width: 1000px;
+        height: auto; 
+        max-height: 65vh; 
+        object-fit: contain; 
+        background: rgba(0, 0, 0, 0.85); 
+        border: 4px solid var(--neon-cyan); 
+        border-radius: 24px; 
+        box-shadow: 0 0 60px rgba(0, 242, 255, 0.4); 
+    }
+    
+    .font-game { font-family: 'Orbitron', sans-serif; }
+    .glass { background: var(--panel); backdrop-filter: blur(30px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .neon-btn { background: linear-gradient(135deg, var(--neon-cyan), #0066ff); font-weight: 900; color: #fff; cursor: pointer; transition: all 0.2s; border: none; box-shadow: 0 5px 20px rgba(0, 242, 255, 0.4); }
+    .neon-btn:hover { transform: scale(1.05); box-shadow: 0 0 40px rgba(0, 242, 255, 0.7); }
+    .neon-btn-red { background: linear-gradient(135deg, #ff0055, #ff4500); font-weight: 900; color: #fff; cursor: pointer; transition: all 0.2s; border: none; box-shadow: 0 5px 20px rgba(255, 0, 85, 0.4); }
+    .neon-btn-red:hover { transform: scale(1.05); box-shadow: 0 0 40px rgba(255, 0, 85, 0.7); }
+    .neon-btn-gold { background: linear-gradient(135deg, #ffd700, #ff8800); font-weight: 900; color: #000; cursor: pointer; transition: all 0.2s; border: none; box-shadow: 0 5px 20px rgba(255, 215, 0, 0.4); }
+    .neon-btn-gold:hover { transform: scale(1.05); box-shadow: 0 0 40px rgba(255, 215, 0, 0.7); }
+    
+    .fire-particle { position: absolute; width: 18px; height: 18px; border-radius: 50%; pointer-events: none; animation: fly 0.5s cubic-bezier(0,0,0.2,1) forwards; z-index: 10; filter: blur(1px); }
+    @keyframes fly { to { transform: translateY(-80px) scale(0.1); opacity: 0; } }
+    .spark { position: absolute; border-radius: 50%; pointer-events: none; z-index: 10; }
+
+    .power-ring { position: absolute; border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%) scale(0); animation: powerBurst 0.7s cubic-bezier(0,0,0.2,1) forwards; z-index: 20; }
+    @keyframes powerBurst {
+        0% { transform: translate(-50%, -50%) scale(0.1); opacity: 1; border-width: 40px; filter: drop-shadow(0 0 20px currentColor); }
+        100% { transform: translate(-50%, -50%) scale(5.5); opacity: 0; border-width: 1px; filter: drop-shadow(0 0 0px currentColor); }
+    }
+
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-thumb { background: #00f2ff; border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="fixed top-0 left-0 right-0 z-[60] glass p-4 flex flex-col items-center">
+    <div class="flex items-center justify-center gap-4 sm:gap-8">
+      <img src="baihl.jpg" onerror="this.style.display='none'" alt="Logo" class="h-10 sm:h-14 object-contain rounded-lg">
+      <h2 class="text-center font-game font-black text-xs sm:text-xl text-cyan-400 uppercase">
+        BEYOĞLU ANATOLIAN IMAM HATIP SECONDARY SCHOOL<br>
+        <span class="text-white text-[10px] sm:text-base italic uppercase">TÜBİTAK 4006 - PHYSICS & ENGLISH PONG (POWER EDITION)</span>
+      </h2>
+      <img src="tubitak.png" onerror="this.style.display='none'" alt="Tubitak" class="h-10 sm:h-14 object-contain">
+    </div>
+  </div>
+
+  <!-- LOGIN -->
+  <div id="nameEntry" class="fixed inset-0 z-[100] bg-black flex items-center justify-center p-4">
+    <div class="glass p-10 rounded-[3rem] border-2 border-cyan-500/30 max-w-md w-full text-center">
+      <h3 class="text-4xl font-game mb-6 text-cyan-400 uppercase italic">Pilot Registry</h3>
+      <div class="space-y-4 mb-6">
+          <div>
+              <label class="block text-left text-xs font-bold text-cyan-300 mb-1 uppercase font-game">Player 1 Name</label>
+              <input type="text" id="p1NameInput" placeholder="P1 Name..." class="w-full p-3 bg-black/50 border border-cyan-500/50 rounded-xl text-white text-center text-lg outline-none focus:border-cyan-400">
+          </div>
+          <div>
+              <label class="block text-left text-xs font-bold text-red-400 mb-1 uppercase font-game">Player 2 Name (Leave empty for AI Bot)</label>
+              <input type="text" id="p2NameInput" placeholder="P2 Name or Bot..." class="w-full p-3 bg-black/50 border border-red-500/50 rounded-xl text-white text-center text-lg outline-none focus:border-red-400">
+          </div>
+      </div>
+      <button class="neon-btn w-full py-5 rounded-xl font-game text-xl mb-4" onclick="savePlayerNames()">ENTER ARENA</button>
+      <button class="glass w-full py-3 rounded-xl font-game text-sm text-gray-400 hover:text-white" onclick="playAsGuest()">QUICK GUEST START</button>
+    </div>
+  </div>
+
+  <!-- CONTINUE MODAL -->
+  <div id="continueGameModal" class="fixed inset-0 z-[105] bg-black/98 flex items-center justify-center p-4 hidden">
+    <div class="glass p-10 rounded-[3rem] border-2 border-cyan-500/30 max-w-md w-full text-center">
+      <h3 class="text-3xl font-game mb-6 text-cyan-400 uppercase italic">Continue Game?</h3>
+      <p id="continueMsg" class="text-xl mb-8 text-white"></p>
+      <div class="flex gap-4">
+        <button class="neon-btn flex-1 py-4 rounded-xl font-game text-lg" onclick="loadSavedGame()">YES</button>
+        <button class="glass flex-1 py-4 rounded-xl font-game text-lg text-white border-2 border-cyan-500/30" onclick="startNewGame()">NO</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN MENU -->
+  <div id="mainMenu" class="fixed inset-0 z-50 flex flex-col items-center justify-center px-4 pt-32 hidden">
+    <h1 class="text-6xl sm:text-8xl font-black font-game italic mb-2 tracking-tighter text-white">PONG<span class="text-cyan-400">QUEST</span></h1>
+    <p class="text-sm text-yellow-400 font-game mb-4 tracking-widest">ULTIMATE POWER EDITION — BEST OF 3 SETS</p>
+    <div class="flex gap-6 mb-8 text-sm font-game">
+        <span class="text-cyan-300">P1: <b id="menuP1Name">PLAYER 1</b></span>
+        <span class="text-red-400">P2: <b id="menuP2Name">BOT</b></span>
+    </div>
+    <div class="grid grid-cols-2 gap-4 w-full max-w-2xl">
+      <button class="col-span-2 glass p-5 rounded-xl border-b-4 border-orange-500 text-orange-400 font-bold uppercase text-2xl hover:scale-105 transition-all" onclick="initGame('2PLAYER')">👥 2 Players Mode (PvP)</button>
+      <button class="glass p-4 rounded-xl border-b-4 border-green-500 text-green-400 font-bold uppercase hover:bg-green-500/20 transition-all" onclick="initGame('EASY')">Easy AI</button>
+      <button class="glass p-4 rounded-xl border-b-4 border-yellow-500 text-yellow-400 font-bold uppercase hover:bg-yellow-500/20 transition-all" onclick="initGame('MEDIUM')">Medium AI</button>
+      <button class="glass p-4 rounded-xl border-b-4 border-red-500 text-red-500 font-bold uppercase hover:bg-red-500/20 transition-all" onclick="initGame('HARD')">Hard AI</button>
+      <button class="glass p-4 rounded-xl border-b-4 border-purple-500 text-purple-400 font-bold uppercase hover:bg-purple-500/20 transition-all" onclick="initGame('TRAINING')">Training</button>
+      
+      <button class="neon-btn py-5 rounded-xl font-game text-xl text-white font-bold" onclick="openCustomShop(1)">🛒 P1 SHOP</button>
+      <button class="neon-btn-red py-5 rounded-xl font-game text-xl text-white font-bold" onclick="openCustomShop(2)">🛒 P2 SHOP</button>
+      
+      <button class="glass p-4 rounded-xl text-white font-bold uppercase text-sm hover:bg-white/10 transition-all" onclick="toggleHowToPlay(true)">How To Play?</button>
+      <button class="glass p-4 rounded-xl text-white font-bold uppercase text-sm hover:bg-white/10 transition-all" onclick="toggleHistory(true)">Match History</button>
+    </div>
+  </div>
+
+  <!-- HOW TO PLAY -->
+  <div id="htpBox" class="fixed inset-0 z-[110] hidden bg-black/95 flex items-center justify-center p-6">
+    <div class="glass p-10 rounded-[3rem] border-2 border-cyan-500/30 max-w-3xl w-full overflow-y-auto max-h-[90vh]">
+        <h3 class="text-4xl font-game text-cyan-400 mb-6 text-center uppercase italic">Mechanics & Controls</h3>
+        <div class="space-y-6 text-lg text-gray-200">
+            <div class="border-l-4 border-cyan-500 pl-4">
+                <h4 class="text-cyan-400 font-bold uppercase">1. Sets & Victory Condition</h4>
+                <p>• Matches are played as <b>Best of 3 Sets</b>. The first player to reach <b>5 Points</b> wins a Set!</p>
+                <p>• Winning 2 Sets grants Ultimate Victory and a massive <b>+300,000 Gold</b> reward!</p>
+            </div>
+            <div class="border-l-4 border-purple-500 pl-4">
+                <h4 class="text-purple-400 font-bold uppercase">2. Deep Power System</h4>
+                <p>Trigger real-time elemental abilities during interactive gameplay (Cost: -5,000 Gold per use):</p>
+                <p>• <b>Player 1 Controls:</b> <span class="text-white font-bold">Z</span> (Fire Boost) | <span class="text-white font-bold">X</span> (Ice Freeze) | <span class="text-white font-bold">C</span> (Slow Down)</p>
+                <p>• <b>Player 2 Controls:</b> <span class="text-white font-bold">M</span> (Fire Boost) | <span class="text-white font-bold">N</span> (Ice Freeze) | <span class="text-white font-bold">B</span> (Slow Down)</p>
+                <p>• <span class="text-yellow-400 font-bold">PvP Limits:</span> In PvP mode, each player is strictly limited to <b>5 Fire, 3 Ice, and 3 Slow</b> uses per Set!</p>
+                <p>• <span class="text-yellow-400 font-bold">Cheat Code:</span> Press <span class="text-white font-bold">G</span> anytime to instantly inject <b>+100,000 Gold</b> to both players!</p>
+            </div>
+            <div class="border-l-4 border-green-500 pl-4">
+                <h4 class="text-green-400 font-bold uppercase">3. Smart Quiz System</h4>
+                <p>• Scoring against AI triggers a Bonus Question for you (+1 Point & +250 Gold if correct).</p>
+                <p>• In PvP, conceding a goal triggers a Defense Question. Correct answers award the point to the scorer and earn you +250 Gold. Wrong answers award NO points to anyone. Select choices using <b>A, B, C, D</b> keys!</p>
+            </div>
+        </div>
+        <button class="neon-btn w-full mt-10 py-5 rounded-xl font-game text-xl" onclick="toggleHowToPlay(false)">CLOSE</button>
+    </div>
+  </div>
+
+  <!-- GAME OVER MODAL -->
+  <div id="gameOverModal" class="fixed inset-0 z-[120] bg-black/95 flex items-center justify-center p-4 hidden">
+    <div class="glass p-12 rounded-[3rem] border-4 border-cyan-500/50 max-w-2xl w-full text-center shadow-[0_0_80px_rgba(0,242,255,0.4)]">
+      <h2 class="text-6xl sm:text-7xl font-black font-game mb-4 text-white tracking-widest">MATCH OVER</h2>
+      <p id="goMsg" class="text-5xl font-game mb-4 uppercase italic"></p>
+      <div id="goSetsText" class="text-3xl font-game text-yellow-400 mb-2 font-bold"></div>
+      <div id="goScoreText" class="text-2xl font-game text-cyan-200 mb-8"></div>
+      <button class="neon-btn w-full py-5 rounded-xl font-game text-2xl" onclick="closeGameOver()">MAIN MENU</button>
+    </div>
+  </div>
+
+  <!-- GAME UI -->
+  <div id="gameBox" class="hidden flex flex-col items-center pt-24 sm:pt-28 px-4 w-full">
+    <div id="statusAlert" class="fixed top-1/3 left-1/2 -translate-x-1/2 text-4xl sm:text-6xl font-black font-game z-[100] pointer-events-none hidden text-center drop-shadow-[0_0_15px_rgba(0,0,0,1)] transition-opacity duration-300 w-full px-4"></div>
+    
+    <div class="w-full max-w-[900px] flex justify-between items-center mb-3 px-4 sm:px-6 glass py-2 sm:py-3 rounded-2xl border border-white/10 shadow-lg relative">
+      <div class="text-left w-1/3">
+        <span id="p1Label" class="text-xs text-cyan-400 font-bold block font-game uppercase truncate">PLAYER 1</span>
+        <div id="p1Score" class="text-4xl sm:text-5xl font-black font-game text-cyan-300">0</div>
+        <div class="text-xs font-bold text-yellow-400 font-game mt-1"><span id="hudGoldP1">0</span>💰</div>
+      </div>
+      
+      <div class="flex flex-col items-center w-1/3">
+          <div id="setsDisplayHUD" class="text-base sm:text-lg font-black font-game text-yellow-400 tracking-wider drop-shadow-[0_0_8px_rgba(255,215,0,0.6)] mb-2">
+              SETS: 0 - 0
+          </div>
+          <div class="flex gap-2 justify-center">
+              <button class="bg-blue-600 px-3 py-1 rounded-full text-[9px] sm:text-[10px] font-bold uppercase hover:bg-blue-500 transition-all" onclick="quitToMenu()">Menu</button>
+              <button class="bg-red-600 px-3 py-1 rounded-full text-[9px] sm:text-[10px] font-bold uppercase hover:bg-red-500 transition-all" onclick="quitAndSave()">Save</button>
+          </div>
+      </div>
+      
+      <div class="text-right w-1/3">
+        <span id="p2Label" class="text-xs text-red-500 font-bold block font-game uppercase truncate">PLAYER 2</span>
+        <div id="p2Score" class="text-4xl sm:text-5xl font-black font-game text-red-400">0</div>
+        <div class="text-xs font-bold text-yellow-400 font-game mt-1"><span id="hudGoldP2">0</span>💰</div>
+      </div>
+
+      <div id="powerLimitsHUD" class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] sm:text-xs text-gray-400 tracking-wide pointer-events-none whitespace-nowrap bg-black/60 px-4 py-0.5 rounded-full border border-white/5 font-game">
+         ⚡ P1: Z,X,C | P2: M,N,B | G: Cheat Gold
+      </div>
+    </div>
+
+    <div class="relative w-full max-w-[900px] flex justify-center mt-3">
+      <canvas id="gameCanvas" width="1000" height="550"></canvas>
+      <div id="countdown" class="absolute inset-0 hidden flex flex-col items-center justify-center bg-black/90 rounded-[24px] z-30 overflow-hidden">
+        <span class="text-3xl sm:text-5xl font-game text-white mb-0 sm:mb-2 animate-pulse uppercase tracking-widest">Get Ready</span>
+        <span id="cdText" class="text-[10rem] sm:text-[14rem] leading-none font-black font-game text-cyan-400 italic">3</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUIZ BOX -->
+  <div id="quizBox" class="fixed inset-0 z-[110] hidden flex items-center justify-center bg-black/98 p-4">
+    <div class="max-w-4xl w-full p-6 sm:p-12 glass rounded-[3rem] border-2 border-cyan-500/40 text-center flex flex-col max-h-[90vh]">
+        <div id="quizTargetLabel" class="text-xl font-black font-game text-yellow-300 mb-1 uppercase tracking-wider"></div>
+        <div id="quizTimer" class="text-3xl sm:text-4xl font-bold text-yellow-400 font-game mb-4">Time: <span id="timerVal">0</span></div>
+        <div id="qType" class="text-sm sm:text-base font-game text-cyan-300 mb-4 uppercase">Question Type</div>
+        
+        <div class="overflow-y-auto mb-6 px-2 flex-grow">
+            <h3 id="qText" class="text-xl sm:text-3xl font-bold text-white leading-relaxed">...</h3>
+        </div>
+        
+        <div id="aGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 mt-auto"></div>
+        <div class="text-sm text-gray-400 flex justify-center">
+            <button class="neon-btn-red px-8 py-4 rounded-xl text-white font-bold font-game text-lg" onclick="useByeAbility()">BYE (-200💰) SECURE POINT</button>
+        </div>
+    </div>
+  </div>
+
+  <!-- DINAMIK SHOP MENU -->
+  <div id="shopMenu" class="fixed inset-0 z-[110] hidden bg-black/98 flex items-center justify-center p-4 overflow-y-auto">
+    <div class="glass p-8 sm:p-10 rounded-[3rem] border-2 border-cyan-500/30 w-full max-w-6xl my-auto">
+      <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 sticky top-0 bg-black/60 p-4 rounded-2xl backdrop-blur-md z-20 border border-white/10">
+        <div>
+            <h3 id="shopOwnerTitle" class="text-3xl sm:text-4xl font-game text-cyan-400 uppercase italic">Shop</h3>
+            <p class="text-xs text-gray-400">Equip smooth neon paddles & tailored dynamic rendering balls!</p>
+        </div>
+        <div class="text-2xl sm:text-3xl font-bold text-yellow-400 font-game flex items-center gap-2">
+            <span id="shopGoldDisplay">0</span> 💰
+        </div>
+      </div>
+      
+      <div id="shopContent" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 sm:gap-6 max-h-[60vh] overflow-y-auto p-2"></div>
+      
+      <button class="neon-btn w-full mt-6 py-4 rounded-xl font-game text-xl" onclick="toggleShop(false)">EXIT SHOP</button>
+    </div>
+  </div>
+
+  <script>
+    // --- AUDIO SYSTEM ---
+    let audioCtx;
+    function initAudio() {
+        if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+    }
+    function playSound(type) {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator(); const gainNode = audioCtx.createGain();
+        osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+        if (type === 'paddle') { osc.type = 'square'; osc.frequency.setValueAtTime(440, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1); gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1); osc.start(); osc.stop(audioCtx.currentTime + 0.1); } 
+        else if (type === 'wall') { osc.type = 'sine'; osc.frequency.setValueAtTime(220, audioCtx.currentTime); gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1); osc.start(); osc.stop(audioCtx.currentTime + 0.1); } 
+        else if (type === 'score') { osc.type = 'triangle'; osc.frequency.setValueAtTime(880, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.4); gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4); osc.start(); osc.stop(audioCtx.currentTime + 0.4); }
+    }
+
+    // --- MEGA 300 QUESTION DATABASE ---
+    const g_raw = [
+      // 34 EASY (Present Simple / Past Simple)
+      "I ___ an apple every morning.|eat|ate|am eating|eats|easy", "She ___ to school by bus.|goes|go|went|going|easy", "We ___ tennis on Sundays.|play|plays|played|playing|easy",
+      "He ___ water every day.|drinks|drink|drank|drinking|easy", "They ___ a car last year.|bought|buy|buys|buying|easy", "I ___ my keys yesterday.|lost|lose|loses|losing|easy",
+      "She ___ a letter to her friend yesterday.|wrote|writes|is writing|write|easy", "Tom ___ pizza very much.|likes|like|liked|liking|easy", "My dog ___ loud at night.|barks|bark|barked|barking|easy",
+      "We ___ to the cinema last night.|went|go|goes|going|easy", "He ___ his homework quickly.|did|do|does|doing|easy", "She ___ to music every evening.|listens|listen|listened|listening|easy",
+      "I ___ a great movie yesterday.|saw|see|sees|seeing|easy", "They ___ dinner at 7 PM usually.|eat|eats|ate|eating|easy", "My father ___ a new phone last week.|got|get|gets|getting|easy",
+      "The sun ___ in the east.|rises|rise|rose|rising|easy", "Cats ___ milk.|drink|drinks|drank|drinking|easy", "I ___ to Paris two years ago.|traveled|travel|travels|traveling|easy",
+      "She ___ a beautiful song yesterday.|sang|sing|sings|singing|easy", "We ___ English every day.|study|studies|studied|studying|easy", "He ___ an email yesterday.|sent|send|sends|sending|easy",
+      "The train ___ at 8 AM every day.|leaves|leave|left|leaving|easy", "I ___ my hands before meals.|wash|washes|washed|washing|easy", "They ___ the match last night.|won|win|wins|winning|easy",
+      "She ___ her room yesterday.|cleaned|clean|cleans|cleaning|easy", "He ___ coffee in the morning.|drinks|drink|drank|drinking|easy", "We ___ a loud noise last night.|heard|hear|hears|hearing|easy",
+      "My brother ___ football on weekends.|plays|play|played|playing|easy", "I ___ a book last month.|read|reads|reading|is reading|easy", "She ___ a nice dress yesterday.|wore|wear|wears|wearing|easy",
+      "They ___ early every day.|wake up|wakes up|woke up|waking up|easy", "He ___ to the gym yesterday.|went|go|goes|going|easy", "I ___ happy yesterday.|was|were|am|is|easy", "She ___ a doctor.|is|are|am|was|easy",
+      // 33 NORMAL (Present Cont / Past Cont / Comparatives)
+      "They ___ TV when I called them.|were watching|are watching|watched|watch|normal", "She ___ a book right now.|is reading|reads|read|was reading|normal", "My car is ___ than yours.|faster|fastest|fast|more fast|normal",
+      "He ___ when the phone rang.|was sleeping|sleeps|is sleeping|slept|normal", "I ___ my homework at the moment.|am doing|do|did|was doing|normal", "This test is ___ than the previous one.|easier|easy|easiest|more easy|normal",
+      "We ___ lunch when he arrived.|were having|are having|have|had|normal", "Look! The baby ___ in the garden.|is walking|walks|walked|walk|normal", "She is ___ than her sister.|taller|tallest|tall|more tall|normal",
+      "The dogs ___ loudly right now.|are barking|bark|barked|were barking|normal", "I ___ a shower when the lights went out.|was taking|took|takes|is taking|normal", "My house is ___ than yours.|bigger|biggest|big|more big|normal",
+      "They ___ a new bridge at the moment.|are building|build|built|were building|normal", "He ___ along the street when he saw her.|was walking|walks|walked|is walking|normal", "Today is ___ than yesterday.|hotter|hottest|hot|more hot|normal",
+      "We ___ to music right now.|are listening|listen|listened|were listening|normal", "She ___ dinner when I knocked the door.|was cooking|cooks|cooked|is cooking|normal", "This book is ___ than that one.|better|good|best|more good|normal",
+      "I ___ to you right now.|am talking|talk|talked|was talking|normal", "They ___ football when it started to rain.|were playing|play|played|are playing|normal", "Math is ___ than History.|harder|hardest|hard|more hard|normal",
+      "He ___ his car at the moment.|is washing|washes|washed|was washing|normal", "I ___ a dream when you woke me up.|was having|have|had|am having|normal", "My bag is ___ than your bag.|heavier|heavy|heaviest|more heavy|normal",
+      "She ___ a letter right now.|is writing|writes|wrote|was writing|normal", "We ___ our house when they arrived.|were cleaning|clean|cleaned|are cleaning|normal", "A cheetah is ___ than a lion.|faster|fast|fastest|more fast|normal",
+      "They ___ the piano at the moment.|are playing|play|played|were playing|normal", "He ___ a book when I saw him.|was reading|reads|read|is reading|normal", "Winter is ___ than Autumn.|colder|cold|coldest|more cold|normal",
+      "I ___ english grammar right now.|am studying|study|studied|was studying|normal", "She ___ to music when her mom called.|was listening|listens|listened|is listening|normal", "An elephant is ___ than a mouse.|bigger|biggest|big|more big|normal",
+      // 33 HARD (Superlatives / Mixed / Complex)
+      "He is the ___ player in the team.|best|better|good|most good|hard", "While she ___ , the power went out.|was studying|studied|is studying|studies|hard", "This is the ___ building in the city.|tallest|taller|tall|most tall|hard",
+      "That was the ___ movie I have ever seen.|worst|worse|bad|baddest|hard", "I would have helped if I ___ you were here.|had known|knew|know|was knowing|hard", "She is the ___ student in our class.|smartest|smarter|smart|most smart|hard",
+      "By the time we arrived, the movie ___.|had started|started|was starting|starts|hard", "This is the ___ expensive car in the shop.|most|more|much|many|hard", "He behaves as though he ___ the boss.|were|was|is|be|hard",
+      "Mount Everest is the ___ mountain in the world.|highest|higher|high|most high|hard", "Scarcely ___ the room when the alarm went off.|had he entered|he had entered|he entered|did he enter|hard", "Russia is the ___ country in the world.|largest|larger|large|most large|hard",
+      "I wish I ___ that car when it was cheap.|had bought|bought|buy|would buy|hard", "This is the ___ interesting book I have read.|most|more|much|very|hard", "Never before ___ such a devastating storm.|have I seen|I have seen|did I saw|I saw|hard",
+      "Jupiter is the ___ planet in our solar system.|biggest|bigger|big|most big|hard", "If he ___ harder, he would have passed.|had tried|tried|tries|was trying|hard", "She is the ___ beautiful girl I know.|most|more|much|too|hard",
+      "It is crucial that he ___ present at the meeting.|be|is|was|were|hard", "The cheetah is the ___ land animal.|fastest|faster|fast|most fast|hard", "I ___ my keys; I can't find them anywhere.|have lost|lost|was losing|lose|hard",
+      "The blue whale is the ___ animal on Earth.|heaviest|heavier|heavy|most heavy|hard", "He ___ in London for ten years now.|has been living|lived|lives|is living|hard", "This is the ___ difficult exam I've taken.|most|more|much|very|hard",
+      "Hardly ___ my eyes when the phone rang.|had I closed|I had closed|did I close|I closed|hard", "She is the ___ talented singer here.|most|more|much|too|hard", "If I ___ you, I would study harder.|were|was|am|be|hard",
+      "The Sahara is the ___ hot desert.|largest|larger|large|most large|hard", "They ___ each other since childhood.|have known|knew|know|are knowing|hard", "He is the ___ person I have ever met.|laziest|lazier|lazy|most lazy|hard",
+      "We ___ to the station before the train left.|had got|got|get|were getting|hard", "It was the ___ exciting match of the year.|most|more|much|very|hard", "I will call you as soon as I ___.|arrive|will arrive|arrived|arriving|hard"
+    ];
+
+    const p_raw = [
+      // 34 EASY (1-2 sentences)
+      "Tom has a red car. He drives it to work.\n\nWhat color is Tom's car?|Red|Blue|Green|Black|easy", "Mary likes apples. She eats one every day.\n\nWhat does Mary eat?|Apples|Bananas|Oranges|Grapes|easy", "The dog is sleeping on the sofa. It is very tired.\n\nWhere is the dog sleeping?|On the sofa|On the bed|Under the table|In the garden|easy",
+      "John plays tennis on weekends. He is very good at it.\n\nWhen does John play tennis?|On weekends|On Mondays|Every day|At night|easy", "The sky is blue today. The sun is shining bright.\n\nWhat color is the sky?|Blue|Gray|Black|Red|easy", "My cat drinks milk. She loves it.\n\nWhat does the cat drink?|Milk|Water|Juice|Tea|easy",
+      "Sara has a big house. It has four bedrooms.\n\nHow many bedrooms does Sara's house have?|Four|Two|Three|Five|easy", "The school starts at 8 AM. Students must be on time.\n\nWhat time does school start?|8 AM|9 AM|7 AM|10 AM|easy", "It is raining outside. You should take an umbrella.\n\nWhat should you take?|An umbrella|A hat|A coat|A bag|easy",
+      "Lions are big cats. They live in Africa.\n\nWhere do lions live?|Africa|Europe|Asia|America|easy", "Paul is a doctor. He works in a hospital.\n\nWhere does Paul work?|In a hospital|In a school|In a bank|In a shop|easy", "The book is on the table. It is very heavy.\n\nWhere is the book?|On the table|On the chair|In the bag|On the floor|easy",
+      "My favorite color is green. I wear green shirts.\n\nWhat is my favorite color?|Green|Blue|Red|Yellow|easy", "Birds can fly. They have wings.\n\nWhat do birds use to fly?|Wings|Legs|Tails|Beaks|easy", "I have two brothers. We play together.\n\nHow many brothers do I have?|Two|One|Three|Four|easy",
+      "The car is fast. It goes very quickly.\n\nHow does the car go?|Quickly|Slowly|Badly|Quietly|easy", "Apples are fruits. They are healthy.\n\nWhat are apples?|Fruits|Vegetables|Meat|Drinks|easy", "The teacher is talking. Students are listening.\n\nWhat are students doing?|Listening|Talking|Sleeping|Playing|easy",
+      "It is winter. The weather is very cold.\n\nHow is the weather?|Cold|Hot|Warm|Sunny|easy", "My phone is ringing. I need to answer it.\n\nWhat is ringing?|My phone|The door|The alarm|The bell|easy", "The baby is crying. She is hungry.\n\nWhy is the baby crying?|She is hungry|She is tired|She is cold|She is happy|easy",
+      "Water is important. We need it to live.\n\nWhy do we need water?|To live|To swim|To clean|To play|easy", "The movie is funny. People are laughing.\n\nWhy are people laughing?|The movie is funny|The movie is sad|The movie is scary|The movie is boring|easy", "I like to read. I read books every night.\n\nWhat do I do every night?|Read books|Watch TV|Play games|Sleep early|easy",
+      "The grass is green. Cows eat grass.\n\nWhat do cows eat?|Grass|Meat|Fruits|Bugs|easy", "My name is Ali. I am ten years old.\n\nHow old is Ali?|Ten|Nine|Eleven|Twelve|easy", "The door is open. Please close it.\n\nWhat is open?|The door|The window|The box|The book|easy",
+      "He is running fast. He wants to win.\n\nWhy is he running fast?|To win|To lose|To hide|To play|easy", "I have a pen. I write with it.\n\nWhat do I write with?|A pen|A pencil|A marker|A brush|easy", "The ball is round. We play with it.\n\nWhat shape is the ball?|Round|Square|Triangle|Flat|easy",
+      "My shoes are dirty. I will wash them.\n\nWhat will I do with my shoes?|Wash them|Throw them|Sell them|Paint them|easy", "The music is loud. Turn it down.\n\nHow is the music?|Loud|Quiet|Fast|Slow|easy", "The bag is heavy. I can't lift it.\n\nWhy can't I lift the bag?|It is heavy|It is light|It is big|It is small|easy", "The window is broken. We must fix it.\n\nWhat is broken?|The window|The door|The chair|The table|easy",
+      // 33 NORMAL (2-3 sentences)
+      "The Great Wall of China is very long. It was built to protect China from enemies. Tourists visit it every year.\n\nWhy was the Great Wall built?|To protect China|To attract tourists|To connect cities|To look beautiful|normal", "Camels live in the desert. They can survive for a long time without drinking water because they store fat in their humps.\n\nWhere do camels store their fat?|In their humps|In their legs|In their stomachs|In their necks|normal",
+      "Marie Curie was a famous scientist. She discovered radioactivity and won two Nobel Prizes for her amazing work.\n\nWhat did Marie Curie discover?|Radioactivity|Electricity|Gravity|Penicillin|normal", "Mount Everest is the highest mountain on Earth. It is located in the Himalayas and is very dangerous to climb.\n\nWhere is Mount Everest located?|In the Himalayas|In the Alps|In the Andes|In the Rockies|normal",
+      "The Amazon Rainforest is huge and full of different animals. It produces a lot of oxygen, but people are destroying it.\n\nWhat does the Amazon Rainforest produce a lot of?|Oxygen|Gold|Oil|Wood|normal", "Shakespeare was an English writer. He lived during the Renaissance and wrote famous plays like Romeo and Juliet.\n\nWhat did Shakespeare write?|Plays|Newspapers|Songs|Letters|normal",
+      "The Titanic was a huge ship. In 1912, it hit an iceberg in the ocean and sank during its first trip.\n\nWhat did the Titanic hit?|An iceberg|Another ship|A big rock|A whale|normal", "Bees are very important insects. They collect nectar from flowers to make honey, which people love to eat.\n\nWhat do bees collect from flowers?|Nectar|Leaves|Water|Seeds|normal",
+      "Penguins are birds, but they cannot fly. They live in cold places like Antarctica and are excellent swimmers.\n\nWhere do penguins live?|Antarctica|Africa|Australia|Europe|normal", "Chocolate is made from cacao beans. The beans are dried, roasted, and then turned into sweet treats.\n\nWhat is chocolate made from?|Cacao beans|Coffee beans|Milk powder|Sugar cane|normal",
+      "The human body has 206 bones. The longest bone is the femur, which is located in the upper leg.\n\nWhere is the femur located?|In the upper leg|In the arm|In the spine|In the head|normal", "Leonardo da Vinci painted the Mona Lisa. He was also an inventor and studied how birds fly.\n\nWho painted the Mona Lisa?|Leonardo da Vinci|Vincent van Gogh|Pablo Picasso|Claude Monet|normal",
+      "Japan is an island country in Asia. It is famous for its advanced technology, sushi, and bullet trains.\n\nWhat continent is Japan in?|Asia|Europe|Africa|America|normal", "Water boils at 100 degrees Celsius. When it boils, it turns into steam and goes into the air.\n\nAt what temperature does water boil?|100 degrees Celsius|50 degrees Celsius|0 degrees Celsius|90 degrees Celsius|normal",
+      "Elephants are the largest land animals. They use their long trunks to drink water, pick up food, and communicate.\n\nWhat do elephants use their trunks for?|To drink and pick up food|To see better|To hear sounds|To run fast|normal", "The Eiffel Tower is in Paris, France. It was built in 1889 and is made entirely of iron.\n\nWhat is the Eiffel Tower made of?|Iron|Stone|Wood|Glass|normal",
+      "Cheetahs are the fastest land animals in the world. They can run up to 120 kilometers per hour to catch their prey.\n\nHow fast can a cheetah run?|Up to 120 km/h|Up to 50 km/h|Up to 200 km/h|Up to 80 km/h|normal", "Oxygen is a gas that we need to breathe. Trees and plants produce oxygen during the day using sunlight.\n\nWhat produces oxygen during the day?|Trees and plants|Animals and fish|Cars and factories|Rocks and soil|normal",
+      "A thermometer is a tool used by doctors and scientists. It measures how hot or cold something is.\n\nWhat does a thermometer measure?|Temperature|Weight|Speed|Distance|normal", "The moon revolves around the Earth. It takes about 27 days for the moon to complete one full orbit.\n\nHow long does one orbit of the moon take?|About 27 days|About 10 days|About 365 days|About 24 hours|normal",
+      "Alexander Graham Bell invented the telephone in 1876. This invention changed how people communicate over long distances.\n\nWhat did Alexander Graham Bell invent?|The telephone|The airplane|The lightbulb|The radio|normal", "Kangaroos live in Australia. They carry their babies in a special pouch on their stomachs until they grow up.\n\nWhere do kangaroos carry their babies?|In a pouch|On their backs|In their mouths|In a nest|normal",
+      "Volcanoes can erupt and shoot hot lava into the air. When lava cools down, it turns into solid rock.\n\nWhat happens to lava when it cools down?|It turns into solid rock|It turns into water|It disappears|It turns into gas|normal", "Apples float in water because they are 25% air. This is why you can easily play apple-bobbing games in autumn.\n\nWhy do apples float in water?|They are 25% air|They have magic|They are very heavy|They hate water|normal",
+      "The sun is the closest star to Earth. It provides light and heat, which are necessary for all living things.\n\nWhat does the sun provide?|Light and heat|Water and air|Food and soil|Rocks and minerals|normal", "Dolphins are very smart marine mammals. They communicate with each other using clicks, squeaks, and whistles.\n\nHow do dolphins communicate?|Using clicks and whistles|Using sign language|Writing on sand|Changing colors|normal",
+      "Paper was invented in ancient China. Early paper was made from a mixture of tree bark, hemp, and old rags.\n\nWhere was paper invented?|Ancient China|Ancient Egypt|Ancient Rome|Ancient Greece|normal", "Vampire bats drink the blood of other animals. They mostly bite cows and horses while they are sleeping at night.\n\nWhat do vampire bats drink?|Blood|Water|Milk|Fruit juice|normal",
+      "A compass has a magnetic needle that always points North. It helps sailors and hikers find their way so they do not get lost.\n\nWhich direction does a compass needle point?|North|South|East|West|normal", "The human heart beats about 100,000 times a day. It pumps blood to all parts of the body to keep us alive.\n\nHow many times does the heart beat a day?|About 100,000 times|About 1,000 times|About 10,000 times|About 1,000,000 times|normal",
+      "Owls are nocturnal birds, meaning they sleep during the day and hunt for food at night using their excellent vision.\n\nWhen do owls hunt for food?|At night|In the morning|At noon|In the afternoon|normal", "Telescopes help us see things that are very far away. Astronomers use them to look at stars, planets, and galaxies.\n\nWhat do telescopes help us do?|See things far away|Hear quiet sounds|Lift heavy things|See tiny bacteria|normal", "An octopus has eight arms and three hearts. When it is scared, it shoots dark ink to confuse its enemies and escape.\n\nHow many hearts does an octopus have?|Three|One|Two|Eight|normal",
+      // 33 HARD (3-4 sentences, inference/detail)
+      "Quantum computing utilizes the principles of quantum mechanics to process information. Unlike classical bits that are strictly 0 or 1, quantum qubits can exist in multiple states simultaneously, allowing for incredibly fast calculations.\n\nWhat defines a quantum qubit?|It can exist in multiple states simultaneously|It operates solely on binary logic|It is slower than classical bits|It relies on vacuum tubes|hard",
+      "Neuroplasticity refers to the brain's ability to reorganize itself by forming new neural connections throughout life. This amazing capability allows humans to recover from traumatic brain injuries and adapt to new situations.\n\nWhat does neuroplasticity allow the brain to do?|Form new neural connections|Stop aging processes permanently|Store infinite amounts of physical memory|Replace damaged cells with synthetic ones|hard",
+      "Cryptocurrency relies on blockchain technology, which is a decentralized public ledger system. It secures all transactions through complex cryptographic hashing, thereby completely eliminating the need for central banks.\n\nWhat technology secures cryptocurrency transactions?|Blockchain technology|Central banking servers|Physical gold reserves|Standard cloud storage|hard",
+      "Photosynthesis is a complex process used by plants and other organisms to convert light energy into chemical energy. This chemical energy is later released to fuel the organisms' activities, creating oxygen as a byproduct.\n\nWhat is a byproduct of photosynthesis?|Oxygen|Carbon dioxide|Nitrogen|Soil|hard",
+      "The theory of relativity, developed by Albert Einstein, completely transformed theoretical physics and astronomy. It introduced the concept of spacetime as a unified entity and proved that time is not absolute but relative to the observer's speed.\n\nWhat concept did the theory of relativity introduce?|Spacetime as a unified entity|The absolute nature of time|The invention of gravity|The speed of sound|hard",
+      "Artificial Intelligence (AI) algorithms require massive datasets to train effectively. By recognizing subtle patterns in these datasets, AI models can make highly accurate predictions, though they may also inherit human biases present in the data.\n\nWhat is a potential negative issue with AI models?|They may inherit human biases|They work too slowly|They refuse to learn patterns|They delete their own data|hard",
+      "In economics, inflation is a general increase in the prices of goods and services in an economy. When the general price level rises, each unit of currency buys fewer goods and services, meaning inflation corresponds to a reduction in the purchasing power of money.\n\nWhat does inflation cause?|A reduction in purchasing power|An increase in purchasing power|A stabilization of prices|A reduction in goods produced|hard",
+      "The Mariana Trench is the deepest oceanic trench on Earth. Because of the extreme pressure, freezing temperatures, and total darkness, very few specialized organisms, such as xenophyophores, can survive at its bottom.\n\nWhy is survival difficult at the bottom of the Mariana Trench?|Extreme pressure and darkness|Excessive heat and light|Strong ocean currents|Lack of salt in the water|hard",
+      "DNA, or deoxyribonucleic acid, is a molecule composed of two polynucleotide chains that coil around each other to form a double helix. It carries the genetic instructions essential for the development, functioning, and reproduction of all known organisms.\n\nWhat shape does a DNA molecule form?|A double helix|A perfect circle|A straight line|A flat square|hard",
+      "Renewable energy is derived from natural processes that are replenished constantly. Various forms of renewable energy include sunlight, geothermal heat, wind, tides, and water, which provide an excellent alternative to fossil fuels.\n\nWhich of the following is NOT a renewable energy source?|Fossil fuels|Sunlight|Wind|Geothermal heat|hard",
+      "A black hole is a region of spacetime where gravity is so incredibly strong that nothing, not even light or other electromagnetic waves, has enough energy to escape its event horizon.\n\nWhat cannot escape a black hole?|Light|Gravity|Time|Space|hard",
+      "Symbiosis is any type of a close and long-term biological interaction between two different biological organisms. It can be mutualistic, where both benefit, or parasitic, where one benefits at the expense of the other.\n\nWhat is it called when one organism benefits at the expense of the other?|Parasitic|Mutualistic|Friendly|Independent|hard",
+      "The Renaissance was a fervent period of European cultural, artistic, political, and economic rebirth following the Middle Ages. It generally took place from the 14th century to the 17th century, heavily influenced by classical philosophy.\n\nWhat historical period did the Renaissance follow?|The Middle Ages|The Industrial Revolution|The Stone Age|The Victorian Era|hard",
+      "Antibiotics are powerful medicines that fight bacterial infections in people and animals. However, they are completely ineffective against viral infections, such as the common cold or the flu, because viruses have different structures.\n\nWhat are antibiotics ineffective against?|Viral infections|Bacterial infections|Fungal infections|All diseases|hard",
+      "In literature, a protagonist is the central character or leading figure in poetry, narrative, novel or any other story. A protagonist is often referred to as the 'hero' by the audience, fighting against the antagonist.\n\nWho does the protagonist usually fight against?|The antagonist|The author|The narrator|The audience|hard",
+      "Global warming refers to the long-term heating of Earth's climate system observed since the pre-industrial period. This is primarily due to human activities, primarily fossil fuel burning, which increases heat-trapping greenhouse gas levels.\n\nWhat primary human activity contributes to global warming?|Fossil fuel burning|Planting trees|Riding bicycles|Recycling plastic|hard",
+      "A placebo is a substance or treatment which is designed to have no therapeutic value. Common placebos include inert pills, inert injections, and fake surgery, used mostly in medical trials to test the actual effectiveness of a new drug.\n\nWhat is the main purpose of a placebo in medical trials?|To test the effectiveness of a new drug|To cure serious diseases|To make patients sleep|To replace all medicines|hard",
+      "Psychology is the scientific study of mind and behavior. It encompasses the biological influences, social pressures, and environmental factors that affect how people think, act, and feel in their daily lives.\n\nWhat does psychology scientifically study?|Mind and behavior|Plants and animals|Stars and planets|Rocks and minerals|hard",
+      "An ecosystem is a geographic area where plants, animals, and other organisms, as well as weather and landscape, work together to form a bubble of life. Every factor in an ecosystem depends on every other factor, directly or indirectly.\n\nWhat works together to form an ecosystem?|Organisms, weather, and landscape|Only weather and rocks|Only humans and buildings|Only fish and water|hard",
+      "Democracy is a system of government where the citizens exercise power by voting. In a direct democracy, the citizens as a whole form a governing body and vote directly on each issue, rather than electing representatives.\n\nHow do citizens exercise power in a democracy?|By voting|By fighting|By paying taxes|By owning land|hard",
+      "A vaccine is a biological preparation that provides active acquired immunity to a particular infectious disease. It typically contains an agent that strongly resembles a disease-causing microorganism, stimulating the body's immune system to destroy it.\n\nWhat does a vaccine stimulate?|The immune system|The nervous system|The digestive system|The skeletal system|hard",
+      "Gravity, or gravitation, is a natural phenomenon by which all things with mass or energy are brought toward one another. On Earth, gravity gives weight to physical objects, and the Moon's gravity causes the ocean tides.\n\nWhat causes the ocean tides on Earth?|The Moon's gravity|The Sun's heat|The Earth's rotation|The wind's force|hard",
+      "In computer science, an algorithm is a finite sequence of well-defined, computer-implementable instructions. They are widely used for solving specific classes of problems or performing a computation in a predictable manner.\n\nWhat is an algorithm used for?|Solving problems or performing computations|Building physical hardware|Painting digital art|Typing letters on a keyboard|hard",
+      "The ozone layer is a region of Earth's stratosphere that absorbs most of the Sun's ultraviolet radiation. It contains high concentrations of ozone (O3) and protects living organisms from harmful UV rays that can cause skin cancer.\n\nWhat does the ozone layer protect us from?|Ultraviolet radiation|Cold weather|Meteorites|Acid rain|hard",
+      "Capitalism is an economic system based on the private ownership of the means of production and their operation for profit. Central characteristics of capitalism include capital accumulation, competitive markets, and a price system.\n\nWhat is capitalism based on?|Private ownership for profit|Government ownership|Free distribution of goods|Equal sharing of all wealth|hard",
+      "A hurricane is a rapidly rotating storm system characterized by a low-pressure center, a closed low-level atmospheric circulation, strong winds, and a spiral arrangement of thunderstorms that produce heavy rain.\n\nWhat characterizes the center of a hurricane?|Low-pressure|High-pressure|No wind|Extreme heat|hard",
+      "Philosophy is the systematized study of general and fundamental questions, such as those about existence, reason, knowledge, values, mind, and language. Such questions are often posed as problems to be studied or resolved.\n\nWhich of the following is a subject of philosophy?|Existence, reason, and knowledge|Math equations|Chemical reactions|Anatomy of animals|hard",
+      "Evolution is change in the heritable characteristics of biological populations over successive generations. These characteristics are the expressions of genes that are passed on from parent to offspring during reproduction.\n\nWhen are genes passed on from parent to offspring?|During reproduction|During sleeping|During eating|During hunting|hard",
+      "A monopoly exists when a specific person or enterprise is the only supplier of a particular commodity. This contrasts with a monopsony which relates to a single entity's control of a market to purchase a good or service.\n\nWhat defines a monopoly?|Being the only supplier of a commodity|Having many competitors|Being the only buyer|Selling multiple types of goods|hard",
+      "The immune system is a complex network of biological processes that protects an organism from diseases. It detects and responds to a wide variety of pathogens, from viruses to parasitic worms, as well as cancer cells.\n\nWhat does the immune system protect the organism from?|Diseases and pathogens|Healthy cells|Water loss|Oxygen deprivation|hard",
+      "Plate tectonics is a scientific theory describing the large-scale motion of seven large plates and the movements of a larger number of smaller plates of the Earth's lithosphere, which cause earthquakes and form mountains.\n\nWhat is caused by the movement of Earth's lithosphere plates?|Earthquakes and mountain formations|Rain and snow|Ocean tides|Global warming|hard",
+      "Metabolism is the set of life-sustaining chemical reactions in organisms. The three main purposes of metabolism are: the conversion of food to energy, the conversion of food to building blocks for proteins, and the elimination of wastes.\n\nWhich is a main purpose of metabolism?|Conversion of food to energy|Creating new organs|Making blood blue|Stopping the heart rate|hard",
+      "Sociology is the study of human social relationships and institutions. Sociology's subject matter is diverse, ranging from crime to religion, from the family to the state, and from social classes to shared beliefs of a common culture.\n\nWhat does sociology study?|Human social relationships and institutions|The physical structure of the brain|The history of ancient dinosaurs|The chemical makeup of water|hard"
+    ];
+
+    const v_raw = [
+      // 34 EASY
+      "Apple|Elma|Armut|Muz|Çilek|easy", "Water|Su|Ateş|Toprak|Hava|easy", "Book|Kitap|Defter|Kalem|Silgi|easy", "Car|Araba|Bisiklet|Uçak|Tren|easy",
+      "House|Ev|Okul|Hastane|Park|easy", "Dog|Köpek|Kedi|Kuş|Balık|easy", "Sun|Güneş|Ay|Yıldız|Bulut|easy", "Tree|Ağaç|Çiçek|Çimen|Yaprak|easy",
+      "Door|Kapı|Pencere|Duvar|Çatı|easy", "Chair|Sandalye|Masa|Koltuk|Yatak|easy", "Boy|Erkek çocuk|Kız çocuk|Adam|Kadın|easy", "Girl|Kız çocuk|Erkek çocuk|Adam|Kadın|easy",
+      "Red|Kırmızı|Mavi|Yeşil|Sarı|easy", "Blue|Mavi|Kırmızı|Yeşil|Sarı|easy", "Green|Yeşil|Kırmızı|Mavi|Sarı|easy", "Yellow|Sarı|Kırmızı|Mavi|Yeşil|easy",
+      "Black|Siyah|Beyaz|Gri|Kahverengi|easy", "White|Beyaz|Siyah|Gri|Kahverengi|easy", "Fast|Hızlı|Yavaş|Ağır|Hafif|easy", "Slow|Yavaş|Hızlı|Ağır|Hafif|easy",
+      "Big|Büyük|Küçük|Uzun|Kısa|easy", "Small|Küçük|Büyük|Uzun|Kısa|easy", "Hot|Sıcak|Soğuk|Ilık|Serin|easy", "Cold|Soğuk|Sıcak|Ilık|Serin|easy",
+      "Good|İyi|Kötü|Çirkin|Güzel|easy", "Bad|Kötü|İyi|Çirkin|Güzel|easy", "Happy|Mutlu|Üzgün|Kızgın|Korkmuş|easy", "Sad|Üzgün|Mutlu|Kızgın|Korkmuş|easy",
+      "Run|Koşmak|Yürümek|Zıplamak|Yüzmek|easy", "Walk|Yürümek|Koşmak|Zıplamak|Yüzmek|easy", "Eat|Yemek yemek|Su içmek|Uyumak|Konuşmak|easy", "Drink|Su içmek|Yemek yemek|Uyumak|Konuşmak|easy",
+      "Sleep|Uyumak|Uyanmak|Çalışmak|Oynamak|easy", "Play|Oynamak|Çalışmak|Uyumak|Okumak|easy",
+      // 33 NORMAL
+      "Journey|Yolculuk|Rüya|Korku|Masa|normal", "Explain|Açıklamak|Saklamak|Kaçmak|Vurmak|normal", "Beautiful|Güzel|Çirkin|Hızlı|Yavaş|normal",
+      "Important|Önemli|Önemsiz|Kolay|Zor|normal", "Discover|Keşfetmek|Kayıp etmek|Gizlemek|Unutmak|normal", "Society|Toplum|Doğa|Hayvanlar|Uzay|normal",
+      "Environment|Çevre|Bina|Makine|Araç|normal", "Improve|Geliştirmek|Bozmak|Yıkmak|Durdurmak|normal", "Decide|Karar vermek|Şüphelenmek|Korkmak|Ağlamak|normal",
+      "Accept|Kabul etmek|Reddetmek|İzlemek|Sormak|normal", "Remember|Hatırlamak|Unutmak|Öğrenmek|Öğretmek|normal", "Forget|Unutmak|Hatırlamak|Öğrenmek|Öğretmek|normal",
+      "Question|Soru|Cevap|Cümle|Kelime|normal", "Answer|Cevap|Soru|Cümle|Kelime|normal", "Reason|Sebep|Sonuç|Olay|Zaman|normal",
+      "Result|Sonuç|Sebep|Olay|Zaman|normal", "Different|Farklı|Aynı|Benzer|Bitişik|normal", "Similar|Benzer|Farklı|Aynı|Zıt|normal",
+      "Always|Her zaman|Hiçbir zaman|Bazen|Nadiren|normal", "Never|Hiçbir zaman|Her zaman|Bazen|Sık sık|normal", "Sometimes|Bazen|Her zaman|Hiçbir zaman|Asla|normal",
+      "Usually|Genellikle|Nadiren|Asla|Sadece|normal", "Careful|Dikkatli|Dikkatsiz|Hızlı|Yavaş|normal", "Dangerous|Tehlikeli|Güvenli|Temiz|Kirli|normal",
+      "Safe|Güvenli|Tehlikeli|Korkunç|Eğlenceli|normal", "Build|İnşa etmek|Yıkmak|Boyamak|Temizlemek|normal", "Destroy|Yıkmak|İnşa etmek|Korumak|Saklamak|normal",
+      "Protect|Korumak|Saldırmak|İzlemek|Kaçmak|normal", "Attack|Saldırmak|Korumak|Kaçmak|Gizlenmek|normal", "Believe|İnanmak|Yalan söylemek|Görmek|Duymak|normal",
+      "Change|Değiştirmek|Korumak|Beklemek|Durmak|normal", "Wait|Beklemek|Koşmak|Gitmek|Zıplamak|normal", "Leave|Ayrılmak|Kalmak|Gülmek|Ağlamak|normal",
+      // 33 HARD
+      "Obsolete|Kullanımdan kalkmış|Modern|Yeni|Pahalı|hard", "Benevolent|İyiliksever|Zalim|Öfkeli|Hızlı|hard", "Meticulous|Titiz|Dikkatsiz|Dağınık|Pis|hard",
+      "Inevitable|Kaçınılmaz|Şüpheli|Geçici|Gereksiz|hard", "Ubiquitous|Her yerde bulunan|Nadir|Gizli|Kaybolmuş|hard", "Ephemeral|Kısa ömürlü|Kalıcı|Güçlü|Zayıf|hard",
+      "Redundant|Gereksiz|Zorunlu|Faydalı|Önemli|hard", "Ambiguous|Belirsiz|Net|Kesin|Doğru|hard", "Lucid|Açık ve anlaşılır|Karmaşık|Bulanık|Gizli|hard",
+      "Prolific|Üretken|Kısır|Tembel|Yavaş|hard", "Taciturn|Sessiz (Az konuşan)|Geveze|Gürültülü|Komik|hard", "Candid|İçten|Yalancı|Sinsi|Korkak|hard",
+      "Diligent|Çalışkan|Tembel|Aptal|Zeki|hard", "Obstinate|İnatçı|Uyumlu|Nazik|Kaba|hard", "Lethargic|Uyuşuk|Enerjik|Hareketli|Hızlı|hard",
+      "Vulnerable|Savunmasız|Güçlü|Yenilmez|Tehlikeli|hard", "Resilient|Dirençli|Kırılgan|Zayıf|Korkak|hard", "Authentic|Orijinal|Sahte|Kopya|Yapay|hard",
+      "Fraudulent|Sahtekar|Dürüst|Cesur|Korkak|hard", "Superfluous|Gereğinden fazla|Yetersiz|Eksik|Az|hard", "Inquisitive|Meraklı|İlgisiz|Sıkıcı|Komik|hard",
+      "Pragmatic|Uygulamacı (Gerçekçi)|Hayalperest|Duygusal|Kızgın|hard", "Zealous|Gayretli (Şevkli)|İsteksiz|Tembel|Yorgun|hard", "Apathetic|İlgisiz|Meraklı|Heyecanlı|Korkmuş|hard",
+      "Hostile|Düşmanca|Dostça|Sevecen|Nazik|hard", "Amicable|Dostane|Düşmanca|Kaba|Saldırgan|hard", "Intricate|Karmaşık|Basit|Kolay|Düz|hard",
+      "Frivolous|Ciddiyetsiz|Ciddi|Önemli|Ağırbaşlı|hard", "Plausible|Makul (Akla yatkın)|İmkansız|Saçma|Yanlış|hard", "Eccentric|Tuhaf|Sıradan|Normal|Alışılmış|hard",
+      "Impeccable|Kusursuz|Hatalı|Eksik|Kötü|hard", "Tenacious|Azimli (Bırakmayan)|Vazgeçen|Korkak|Zayıf|hard", "Profound|Derin (Anlamlı)|Sığ|Basit|Yüzeysel|hard"
+    ];
+
+    const GRAMMAR_QUESTIONS = g_raw.map(s => { let p = s.split('|'); return { q: p[0], c: p[1], a: [p[1], p[2], p[3], p[4]], type: "grammar", diff: p[5] }; });
+    const PARAGRAPH_QUESTIONS = p_raw.map(s => { let p = s.split('|'); return { q: p[0], c: p[1], a: [p[1], p[2], p[3], p[4]], type: "para", diff: p[5] }; });
+    const VOCABULARY_QUESTIONS = v_raw.map(s => { let p = s.split('|'); return { q: "What is the Turkish meaning of the word '" + p[0] + "'?", c: p[1], a: [p[1], p[2], p[3], p[4]], type: "vocab", diff: p[5] }; });
+
+    let QUESTIONS = [];
+    let usedQuestions = new Set();
+    
+    // --- STATE AND STORAGE ---
+    const KEY = { 
+        G_P1: "pq_p1_gold", G_P2: "pq_p2_gold",
+        O_P1: "pq_p1_own", O_P2: "pq_p2_own",
+        A_P1: "pq_p1_act", A_P2: "pq_p2_act",
+        HIST: "pq_master_hist", GAME_STATE: "pq_master_gstate" 
+    };
+
+    let p1Name = "PLAYER 1";
+    let p2Name = "BOT";
+    let isP2Bot = true;
+
+    let goldP1 = parseInt(localStorage.getItem(KEY.G_P1)) || 250000; 
+    let goldP2 = parseInt(localStorage.getItem(KEY.G_P2)) || 250000; 
+
+    let ownP1 = JSON.parse(localStorage.getItem(KEY.O_P1)) || ["rb", "rp"];
+    let ownP2 = JSON.parse(localStorage.getItem(KEY.O_P2)) || ["sb", "bp"];
+
+    let actP1 = JSON.parse(localStorage.getItem(KEY.A_P1)) || { ball: "rb", paddle: "rp" };
+    let actP2 = JSON.parse(localStorage.getItem(KEY.A_P2)) || { ball: "sb", paddle: "bp" };
+
+    let history = JSON.parse(localStorage.getItem(KEY.HIST)) || [];
+    let currentShopUser = 1;
+
+    let p1Limits = { fire: 5, ice: 3, slow: 3 };
+    let p2Limits = { fire: 5, ice: 3, slow: 3 };
+
+    let currentQuizAnswers = [];
+    let currentQuizCorrect = "";
+    let lastScorer = 1;
+
+    const SHOP_ITEMS = [
+        { id: "rb", type: "ball", name: "Red Ball", i: "🔴", c: "#ff3333", p: 0, rarity: "Common" },
+        { id: "cw", type: "ball", name: "Classic White", i: "●", c: "#ffffff", p: 0, rarity: "Common" },
+        { id: "sr", type: "ball", name: "Simple Red", i: "●", c: "#ff4444", p: 1000, rarity: "Common" },
+        { id: "sb", type: "ball", name: "Simple Blue", i: "●", c: "#4444ff", p: 1000, rarity: "Common" },
+        { id: "sg", type: "ball", name: "Simple Green", i: "●", c: "#44ff44", p: 1000, rarity: "Common" },
+        { id: "sy", type: "ball", name: "Simple Yellow", i: "●", c: "#ffff44", p: 1000, rarity: "Common" },
+        
+        { id: "n_app", type: "ball", name: "Apple Ball", i: "🍎", c: "#ff0000", p: 3000, rarity: "Rare" },
+        { id: "n_sun", type: "ball", name: "Sun Core", i: "☀️", c: "#ffff00", p: 6000, rarity: "Rare" },
+        { id: "s_soc", type: "ball", name: "Soccer Ball", i: "⚽", c: "#ffffff", p: 10000, rarity: "Epic" },
+        { id: "s_bas", type: "ball", name: "Basketball", i: "🏀", c: "#ff8000", p: 10000, rarity: "Epic" },
+        
+        { id: "c_neo", type: "ball", name: "Cyber Neon", i: "●", c: "#00ffcc", p: 15000, rarity: "Epic" },
+        { id: "c_las", type: "ball", name: "Laser Blue", i: "●", c: "#00f2ff", p: 15000, rarity: "Epic" },
+        { id: "sf_ufo", type: "ball", name: "UFO Orbit", i: "🛸", c: "#00f2ff", p: 25000, rarity: "Legendary" },
+        { id: "cs_ear", type: "ball", name: "Planet Earth", i: "🌍", c: "#44ccff", p: 40000, rarity: "Legendary" },
+        { id: "m_sku", type: "ball", name: "Phantom Skull", i: "💀", c: "#ffffff", p: 60000, rarity: "Mystic" },
+        { id: "r_crw", type: "ball", name: "Golden Crown", i: "👑", c: "#ffd700", p: 250000, rarity: "Royal" },
+        { id: "g_zeu", type: "ball", name: "Zeus Energy", i: "⚡", c: "#ccff00", p: 500000, rarity: "Royal" },
+
+        { id: "rp", type: "paddle", name: "Classic Flat Red", i: "▌", c: "#ff0055", p: 0, rarity: "Common" },
+        { id: "bp", type: "paddle", name: "Classic Flat Blue", i: "▌", c: "#0066ff", p: 100, rarity: "Common" },
+        { id: "gp", type: "paddle", name: "Neon Flat Green", i: "▌", c: "#00ff00", p: 150, rarity: "Common" },
+        { id: "yp", type: "paddle", name: "Cyber Flat Yellow", i: "▌", c: "#ffff00", p: 150, rarity: "Common" },
+        { id: "pp", type: "paddle", name: "Royal Flat Purple", i: "▌", c: "#cc00ff", p: 200, rarity: "Rare" },
+        { id: "pkp", type: "paddle", name: "Hyper Flat Pink", i: "▌", c: "#ff1493", p: 200, rarity: "Rare" },
+        { id: "cp", type: "paddle", name: "Diamond Flat Cyan", i: "▌", c: "#00ffff", p: 300, rarity: "Rare" },
+        { id: "op", type: "paddle", name: "Blaze Flat Orange", i: "▌", c: "#ff8800", p: 400, rarity: "Epic" },
+        { id: "wp", type: "paddle", name: "Pure Flat White", i: "▌", c: "#ffffff", p: 450, rarity: "Epic" },
+        { id: "firep", type: "paddle", name: "Magma Flat Red", i: "▌", c: "#ff4500", p: 650, rarity: "Legendary" },
+        { id: "icep", type: "paddle", name: "Absolute Flat Ice", i: "▌", c: "#00f2ff", p: 650, rarity: "Legendary" },
+        { id: "goldp", type: "paddle", name: "Godly Flat Gold", i: "▌", c: "#ffd700", p: 1000, rarity: "Mystic" }
+    ];
+
+    let canvas, ctx, gameState = "MENU", diff = "MEDIUM", quizTargetUser = 1;
+    
+    let score = { p1: 0, p2: 0 };
+    let sets = { p1: 0, p2: 0 };
+    
+    let ball = { x: 500, y: 275, dx: 0, dy: 0, r: 18, boost: 1, fire: false, trail: [] };
+    let p1 = { y: 225, h: 100, dy: 0, frozen: false, slowed: false };
+    let p2 = { y: 225, h: 100, dy: 0, frozen: false, slowed: false };
+    const keys = {};
+    
+    const KEY_CODES = { 
+        W: "KeyW", S: "KeyS", UP: "ArrowUp", DOWN: "ArrowDown", 
+        Z: "KeyZ", X: "KeyX", C: "KeyC", 
+        M: "KeyM", N: "KeyN", B: "KeyB", 
+        G: "KeyG", BYE: "KeyB" 
+    };
+
+    let quizTimerInterval = null;
+    let countdownTimerInterval = null;
+    let lastTime = 0;
+
+    function savePlayerNames() {
+        let n1 = document.getElementById("p1NameInput").value.trim();
+        let n2 = document.getElementById("p2NameInput").value.trim();
+
+        n1 = n1 ? n1 : "PLAYER 1";
+        let tempN2 = n2 === "" ? "BOT" : n2;
+
+        if (n1.toUpperCase() === tempN2.toUpperCase()) {
+            alert("Player 1 and Player 2 cannot have the exact same name!");
+            return;
+        }
+
+        p1Name = n1;
+        if (n2 === "") { p2Name = "BOT"; isP2Bot = true; } 
+        else { p2Name = n2; isP2Bot = false; }
+
+        document.getElementById("nameEntry").classList.add("hidden"); 
+        checkForSavedGame();
+    }
+
+    function playAsGuest() {
+        p1Name = "GUEST P1"; p2Name = "BOT"; isP2Bot = true;
+        document.getElementById("nameEntry").classList.add("hidden"); 
+        checkForSavedGame();
+    }
+
+    function checkForSavedGame() {
+        const savedState = localStorage.getItem(KEY.GAME_STATE + "_FULL");
+        if (savedState) {
+            const state = JSON.parse(savedState);
+            document.getElementById("continueMsg").innerText = `Resume matched session?\nSets: ${state.sets?.p1||0} - ${state.sets?.p2||0} | Score: ${state.score.p1} - ${state.score.p2}`;
+            document.getElementById("continueGameModal").classList.remove("hidden");
+        } else {
+            startNewGame();
+        }
+    }
+
+    function loadSavedGame() {
+        initAudio();
+        const savedState = JSON.parse(localStorage.getItem(KEY.GAME_STATE + "_FULL"));
+        goldP1 = savedState.goldP1 || goldP1; goldP2 = savedState.goldP2 || goldP2;
+        score = savedState.score || { p1: 0, p2: 0 }; sets = savedState.sets || { p1: 0, p2: 0 };
+        diff = savedState.diff || "MEDIUM"; p1Name = savedState.p1Name || p1Name;
+        p2Name = savedState.p2Name || p2Name; isP2Bot = savedState.isP2Bot ?? isP2Bot;
+
+        document.getElementById("continueGameModal").classList.add("hidden");
+        document.getElementById("mainMenu").classList.add("hidden");
+        document.getElementById("gameBox").classList.remove("hidden");
+        
+        document.getElementById("p1Label").innerText = p1Name.toUpperCase();
+        document.getElementById("p2Label").innerText = isP2Bot ? diff.toUpperCase() + " BOT" : p2Name.toUpperCase();
+        
+        QUESTIONS = generateAllQuestions();
+        updateUI(); resetRound();
+    }
+
+    function startNewGame() {
+        initAudio(); score = { p1: 0, p2: 0 }; sets = { p1: 0, p2: 0 }; usedQuestions = new Set();
+        localStorage.removeItem(KEY.GAME_STATE + "_FULL");
+        document.getElementById("continueGameModal").classList.add("hidden"); showMainMenu();
+    }
+
+    function showMainMenu() {
+        document.getElementById("mainMenu").classList.remove("hidden");
+        document.getElementById("menuP1Name").innerText = p1Name.toUpperCase();
+        document.getElementById("menuP2Name").innerText = p2Name.toUpperCase();
+        QUESTIONS = generateAllQuestions(); updateUI();
+    }
+
+    function generateAllQuestions() { return [...GRAMMAR_QUESTIONS, ...PARAGRAPH_QUESTIONS, ...VOCABULARY_QUESTIONS]; }
+
+    function getNextQuestion() {
+        let targetDiff = "normal";
+        if (diff === "EASY") targetDiff = "easy";
+        else if (diff === "MEDIUM") targetDiff = "normal";
+        else if (diff === "HARD") targetDiff = "hard";
+        else if (diff === "2PLAYER" || diff === "TRAINING") {
+            const diffs = ["easy", "normal", "hard"];
+            targetDiff = diffs[Math.floor(Math.random() * diffs.length)];
+        }
+        
+        let pool = QUESTIONS.filter(q => q.diff === targetDiff && !usedQuestions.has(q.q));
+        
+        if (pool.length === 0) { 
+            // Seçili zorluktaki tüm sorular bittiyse sadece onları sıfırla
+            QUESTIONS.filter(q => q.diff === targetDiff).forEach(q => usedQuestions.delete(q.q));
+            pool = QUESTIONS.filter(q => q.diff === targetDiff);
+        }
+
+        if (pool.length === 0) pool = QUESTIONS; // Failsafe
+
+        const question = pool[Math.floor(Math.random() * pool.length)];
+        usedQuestions.add(question.q); 
+        return question;
+    }
+
+    function initGame(mode) {
+        initAudio(); diff = mode; score = { p1: 0, p2: 0 }; sets = { p1: 0, p2: 0 };
+        
+        p1Limits = { fire: 5, ice: 3, slow: 3 };
+        p2Limits = { fire: 5, ice: 3, slow: 3 };
+
+        if (mode === "2PLAYER") {
+            isP2Bot = false;
+            if(p2Name === "BOT") p2Name = "PLAYER 2"; 
+        } else { isP2Bot = true; }
+
+        document.getElementById("mainMenu").classList.add("hidden");
+        document.getElementById("gameBox").classList.remove("hidden");
+        
+        document.getElementById("p1Label").innerText = p1Name.toUpperCase();
+        document.getElementById("p2Label").innerText = isP2Bot ? mode.toUpperCase() + " BOT" : p2Name.toUpperCase();
+        
+        updateUI(); resetRound();
+    }
+
+    function startRound() {
+        gameState = "COUNTDOWN";
+        p1.frozen = p1.slowed = p2.frozen = p2.slowed = false; ball.fire = false;
+        ball.x = 500; ball.y = 275; ball.trail = []; ball.dx = 0; ball.dy = 0;
+        
+        updateUI();
+
+        document.getElementById("countdown").classList.remove("hidden");
+        let c = 3; const txt = document.getElementById("cdText"); txt.innerText = c;
+        
+        if(countdownTimerInterval) clearInterval(countdownTimerInterval);
+        
+        countdownTimerInterval = setInterval(() => {
+            c--;
+            if (c > 0) { txt.innerText = c; } 
+            else if (c === 0) { txt.innerText = "GO!"; } 
+            else {
+                clearInterval(countdownTimerInterval);
+                document.getElementById("countdown").classList.add("hidden"); txt.innerText = "3";
+                
+                let startSpeed = diff === "HARD" ? 10 : (diff === "EASY" ? 5.5 : 7.5);
+                let angle = (Math.random() * (Math.PI / 3)) - (Math.PI / 6);
+                let dir = Math.random() > 0.5 ? 1 : -1;
+                
+                ball.dx = dir * startSpeed * Math.cos(angle); ball.dy = startSpeed * Math.sin(angle); 
+                gameState = "PLAYING";
+            }
+        }, 800);
+    }
+
+    function resetRound() {
+        gameState = "COUNTDOWN"; ball.x = 500; ball.y = 275; ball.dx = 0; ball.dy = 0; ball.trail = [];
+        p1.frozen = p1.slowed = false; p2.frozen = p2.slowed = false;
+        setTimeout(startRound, 500);
+    }
+
+    function spawnSparks(x, y, color) {
+        for(let i=0; i<22; i++) {
+            const s = document.createElement("div"); s.className = "spark";
+            s.style.left = (canvas.offsetLeft + x) + "px"; s.style.top = (canvas.offsetTop + y) + "px";
+            s.style.width = Math.random() * 8 + 4 + "px"; s.style.height = s.style.width; 
+            s.style.background = color; s.style.boxShadow = `0 0 16px ${color}`; document.body.appendChild(s);
+            
+            const a = Math.random() * Math.PI * 2, d = Math.random() * 80 + 20;
+            s.animate([{ transform: 'translate(0,0) scale(1.2)', opacity: 1 }, { transform: `translate(${Math.cos(a)*d}px, ${Math.sin(a)*d}px) scale(0)`, opacity: 0 }], { duration: 500 + Math.random()*300, easing: "cubic-bezier(0,0,0.2,1)" }).onfinish = () => s.remove();
+        }
+    }
+
+    function triggerPowerBurst(x, y, color) {
+        const ring = document.createElement("div"); ring.className = "power-ring border-solid";
+        ring.style.left = (canvas.offsetLeft + x) + "px"; ring.style.top = (canvas.offsetTop + y) + "px";
+        ring.style.borderColor = color; ring.style.color = color; document.body.appendChild(ring); setTimeout(() => ring.remove(), 750);
+
+        for(let i=0; i<35; i++) {
+            const s = document.createElement("div"); s.className = "spark";
+            s.style.left = (canvas.offsetLeft + x) + "px"; s.style.top = (canvas.offsetTop + y) + "px";
+            s.style.width = "6px"; s.style.height = "6px"; s.style.background = color; s.style.boxShadow = `0 0 20px ${color}`; document.body.appendChild(s);
+            
+            const a = Math.random() * Math.PI * 2, d = Math.random() * 150 + 40;
+            s.animate([{ transform: 'translate(0,0) scale(2)', opacity: 1 }, { transform: `translate(${Math.cos(a)*d}px, ${Math.sin(a)*d}px) scale(0)`, opacity: 0 }], { duration: 600 + Math.random()*250, easing: "cubic-bezier(0,0,0.2,1)" }).onfinish = () => s.remove();
+        }
+    }
+
+    function usePower(type, user) {
+        let uGold = user === 1 ? goldP1 : goldP2;
+        let uLimits = user === 1 ? p1Limits : p2Limits;
+
+        if (gameState !== "PLAYING" || uGold < 5000) return;
+
+        if (diff === "2PLAYER") {
+            if (type === 'fire' && uLimits.fire <= 0) return;
+            if (type === 'ice' && uLimits.ice <= 0) return;
+            if (type === 'slow' && uLimits.slow <= 0) return;
+        }
+        
+        if(user === 1) goldP1 -= 5000; else goldP2 -= 5000;
+        
+        if (diff === "2PLAYER") {
+            if (type === 'fire') uLimits.fire--;
+            if (type === 'ice') uLimits.ice--;
+            if (type === 'slow') uLimits.slow--;
+        }
+
+        updateUI();
+        
+        if (type === 'fire') {
+            ball.dx *= 1.8; triggerPowerBurst(ball.x, ball.y, "#ff4500"); ball.fire = true;
+            triggerAlert("🔥 HYPER FIRE SHOT!", "#ff4500"); shakeScreen(); setTimeout(() => ball.fire = false, 2500);
+        }
+        if (type === 'ice') {
+            if (user === 1) { p2.frozen = true; triggerPowerBurst(960, p2.y + 50, "#00f2ff"); triggerAlert("❄️ ICE SHOCKWAVE!", "#00f2ff"); setTimeout(() => p2.frozen = false, 2500); } 
+            else { p1.frozen = true; triggerPowerBurst(40, p1.y + 50, "#00f2ff"); triggerAlert("❄️ ICE SHOCKWAVE!", "#00f2ff"); setTimeout(() => p1.frozen = false, 2500); }
+        }
+        if (type === 'slow') {
+            if (user === 1) { p2.slowed = true; triggerPowerBurst(960, p2.y + 50, "#ffff00"); triggerAlert("🟡 CHRONO SLOW!", "#ffff00"); setTimeout(() => p2.slowed = false, 3000); } 
+            else { p1.slowed = true; triggerPowerBurst(40, p1.y + 50, "#ffff00"); triggerAlert("🟡 CHRONO SLOW!", "#ffff00"); setTimeout(() => p1.slowed = false, 3000); }
+        }
+    }
+
+    function gameLoop(timestamp) {
+        requestAnimationFrame(gameLoop);
+        if (!lastTime) lastTime = timestamp;
+        let dt = (timestamp - lastTime) / (1000 / 60); lastTime = timestamp;
+        if (dt > 3) dt = 3; 
+
+        if (gameState === "PLAYING") {
+            p1.dy = 0; if (keys[KEY_CODES.W]) p1.dy = -12; if (keys[KEY_CODES.S]) p1.dy = 12;
+
+            if (keys[KEY_CODES.Z]) { usePower('fire', 1); keys[KEY_CODES.Z] = false; }
+            if (keys[KEY_CODES.X] && !p2.frozen) { usePower('ice', 1); keys[KEY_CODES.X] = false; }
+            if (keys[KEY_CODES.C] && !p2.slowed) { usePower('slow', 1); keys[KEY_CODES.C] = false; }
+
+            if (!isP2Bot) {
+                if (keys[KEY_CODES.M]) { usePower('fire', 2); keys[KEY_CODES.M] = false; }
+                if (keys[KEY_CODES.N] && !p1.frozen) { usePower('ice', 2); keys[KEY_CODES.N] = false; }
+                if (keys[KEY_CODES.B] && !p1.slowed) { usePower('slow', 2); keys[KEY_CODES.B] = false; }
+            }
+
+            p2.dy = 0;
+            if (!p2.frozen) {
+                let speedLimit = p2.slowed ? 3.5 : (diff === "HARD" ? 11 : (diff === "MEDIUM" || diff === "NORMAL" ? 7.5 : (diff === "EASY" ? 5 : 7.5)));
+                if (!isP2Bot) {
+                    if (keys[KEY_CODES.UP]) p2.dy = -speedLimit; if (keys[KEY_CODES.DOWN]) p2.dy = speedLimit;
+                } else {
+                    let center = p2.y + 50;
+                    if (Math.abs(center - ball.y) > speedLimit * dt) { if (center < ball.y) p2.dy = speedLimit; else p2.dy = -speedLimit; } 
+                    else { p2.dy = (ball.y - center) / dt; }
+                }
+            }
+
+            if(!p1.frozen) p1.y += p1.dy * dt; if(!p2.frozen) p2.y += p2.dy * dt;
+            p1.y = Math.max(0, Math.min(450, p1.y)); p2.y = Math.max(0, Math.min(450, p2.y));
+
+            let currentBoost = ball.fire ? 1.4 : 1;
+            ball.x += ball.dx * currentBoost * dt; ball.y += ball.dy * currentBoost * dt;
+
+            if (ball.y - ball.r < 0) { ball.y = ball.r; ball.dy = Math.abs(ball.dy); spawnSparks(ball.x, ball.y, "#ffffff"); playSound('wall'); } 
+            else if (ball.y + ball.r > 550) { ball.y = 550 - ball.r; ball.dy = -Math.abs(ball.dy); spawnSparks(ball.x, ball.y, "#ffffff"); playSound('wall'); }
+
+            const p1Skin = SHOP_ITEMS.find(s => s.id === actP1.paddle); const p2Skin = SHOP_ITEMS.find(s => s.id === actP2.paddle);
+
+            if (ball.dx < 0 && ball.x - ball.r <= 40 && ball.x + ball.r >= 20 && ball.y >= p1.y - ball.r && ball.y <= p1.y + 100 + ball.r) {
+                ball.x = 40 + ball.r; let hitFactor = (ball.y - (p1.y + 50)) / 50; let angle = hitFactor * (Math.PI / 4); 
+                let currentSpeed = Math.min(22, Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy) + 0.5); ball.dx = currentSpeed * Math.cos(angle); ball.dy = currentSpeed * Math.sin(angle);
+                spawnSparks(40, ball.y, p1Skin.c); playSound('paddle'); shakeScreen();
+            }
+            if (ball.dx > 0 && ball.x + ball.r >= 960 && ball.x - ball.r <= 980 && ball.y >= p2.y - ball.r && ball.y <= p2.y + 100 + ball.r) {
+                ball.x = 960 - ball.r; let hitFactor = (ball.y - (p2.y + 50)) / 50; let angle = hitFactor * (Math.PI / 4); 
+                let currentSpeed = Math.min(22, Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy) + 0.5); ball.dx = -currentSpeed * Math.cos(angle); ball.dy = currentSpeed * Math.sin(angle);
+                spawnSparks(960, ball.y, p2Skin.c); playSound('paddle'); shakeScreen();
+            }
+
+            ball.trail.push({x: ball.x, y: ball.y}); if (ball.trail.length > 12) ball.trail.shift();
+
+            if (ball.x < -30) { 
+                playSound('score'); 
+                lastScorer = 2;
+                if (isP2Bot) { 
+                    score.p2++; triggerAlert(`${p2Name} SCORED!`, "#ff0055"); checkSetOrGame(); 
+                } else { 
+                    quizTargetUser = 1; openQuiz(); 
+                }
+            }
+            if (ball.x > 1030) { 
+                playSound('score'); 
+                lastScorer = 1;
+                if (isP2Bot) { 
+                    quizTargetUser = 1; openQuiz(); 
+                } else { 
+                    quizTargetUser = 2; openQuiz(); 
+                }
+            }
+        }
+        render(); 
+    }
+
+    function checkSetOrGame() {
+        updateUI();
+        if (score.p1 >= 5) { 
+            sets.p1++; score.p1 = 0; score.p2 = 0; 
+            triggerAlert("SET WON BY P1!", "#ffd700"); spawnSparks(500, 275, "#ffd700"); 
+            p1Limits = { fire: 5, ice: 3, slow: 3 }; p2Limits = { fire: 5, ice: 3, slow: 3 };
+        } 
+        else if (score.p2 >= 5) { 
+            sets.p2++; score.p1 = 0; score.p2 = 0; 
+            triggerAlert(`SET WON BY ${p2Name}!`, "#ff0055"); spawnSparks(500, 275, "#ff0055"); 
+            p1Limits = { fire: 5, ice: 3, slow: 3 }; p2Limits = { fire: 5, ice: 3, slow: 3 };
+        }
+        updateUI();
+
+        if (sets.p1 >= 2 || sets.p2 >= 2) {
+            gameState = "GAMEOVER"; let isP1Win = sets.p1 >= 2; let finalWinner = isP1Win ? p1Name : p2Name;
+            if (isP1Win) goldP1 += 300000; else if(!isP2Bot) goldP2 += 300000; updateUI();
+            let res = sets.p1 > sets.p2 ? "W" : "L"; history.push({ name: p1Name, score: `${sets.p1}-${sets.p2} (Sets)`, mode: diff, result: res }); localStorage.setItem(KEY.HIST, JSON.stringify(history)); 
+            document.getElementById("goMsg").innerText = `${finalWinner.toUpperCase()} TAKES ULTIMATE VICTORY!`; document.getElementById("goMsg").className = isP1Win ? "text-4xl sm:text-5xl font-game mb-4 text-green-400 uppercase italic font-bold" : "text-4xl sm:text-5xl font-game mb-4 text-red-500 uppercase italic font-bold"; document.getElementById("goSetsText").innerText = `FINAL SETS: ${sets.p1} - ${sets.p2}`; document.getElementById("goScoreText").innerText = isP1Win || !isP2Bot ? "Prize Awarded: +300,000 Gold!" : "Session concluded."; document.getElementById("gameOverModal").classList.remove("hidden");
+        } else { resetRound(); }
+    }
+
+    function render() {
+        ctx.clearRect(0, 0, 1000, 550);
+        ctx.strokeStyle = "rgba(0, 255, 204, 0.05)"; ctx.lineWidth = 1;
+        for(let i=0; i<1000; i+=40) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 550); ctx.stroke(); }
+        for(let j=0; j<550; j+=40) { ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(1000, j); ctx.stroke(); }
+
+        let activeBallId = ball.dx < 0 ? actP2.ball : actP1.ball; const bSkin = SHOP_ITEMS.find(s => s.id === activeBallId) || SHOP_ITEMS[0];
+        const p1Skin = SHOP_ITEMS.find(s => s.id === actP1.paddle) || SHOP_ITEMS.find(s => s.type === "paddle"); const p2Skin = SHOP_ITEMS.find(s => s.id === actP2.paddle) || SHOP_ITEMS.find(s => s.type === "paddle");
+
+        ball.trail.forEach((pos, i) => { ctx.globalAlpha = (i / ball.trail.length) * 0.4; ctx.font = `${ball.r * 2}px Arial`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(bSkin.i, pos.x, pos.y); }); ctx.globalAlpha = 1;
+
+        ctx.shadowBlur = 25; ctx.fillStyle = p1Skin.c; ctx.shadowColor = p1Skin.c; ctx.fillRect(20, p1.y, 20, 100);
+        
+        ctx.fillStyle = p2Skin.c; ctx.shadowColor = p2Skin.c; 
+        if(p2.frozen) { ctx.fillStyle = "#00f2ff"; ctx.shadowColor = "#00f2ff"; ctx.shadowBlur = 50; } 
+        if(p2.slowed) { ctx.fillStyle = "#ffff00"; ctx.shadowColor = "#ffff00"; ctx.shadowBlur = 40; } 
+        ctx.fillRect(960, p2.y, 20, 100);
+
+        if (ball.fire && Math.random() > 0.2) { 
+            const part = document.createElement("div"); part.className = "fire-particle"; 
+            part.style.left = (canvas.offsetLeft + ball.x + (Math.random()-0.5)*10) + "px"; 
+            part.style.top = (canvas.offsetTop + ball.y + (Math.random()-0.5)*10) + "px"; 
+            part.style.background = Math.random() > 0.4 ? "#ff4500" : "#ff0055"; 
+            part.style.boxShadow = "0 0 15px #ff4500";
+            document.body.appendChild(part); setTimeout(() => part.remove(), 500); 
+        }
+
+        ctx.shadowBlur = 40; ctx.shadowColor = bSkin.c; ctx.font = `${ball.r * 2.4}px Arial`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "#fff"; ctx.fillText(bSkin.i, ball.x, ball.y);
+    }
+
+    function submitQuizAnswer(choice) {
+        if (gameState !== "QUIZ") return;
+        clearInterval(quizTimerInterval);
+        
+        if (choice === currentQuizCorrect) {
+            if (quizTargetUser === 1) goldP1 += 250; else goldP2 += 250;
+            if (lastScorer === 1) score.p1++; else score.p2++;
+            triggerAlert("CORRECT! SCORER GETS POINT! +250💰", "#00ff00");
+        } else {
+            triggerAlert("WRONG! NO POINTS AWARDED!", "#ff0000");
+        }
+        document.getElementById("quizBox").classList.add("hidden"); 
+        checkSetOrGame();
+    }
+
+    function openQuiz() {
+        gameState = "QUIZ"; document.getElementById("quizBox").classList.remove("hidden"); const q = getNextQuestion();
+        let targetName = quizTargetUser === 1 ? p1Name : p2Name; 
+        
+        let quizTypeLabel = (lastScorer === quizTargetUser) ? "Bonus Question!" : "Defense Question!";
+        document.getElementById("quizTargetLabel").innerText = `${targetName}'s ${quizTypeLabel}`;
+        
+        let isTraining = (diff === "TRAINING");
+        let timeLimit = q.type === "para" ? 60 : (q.type === "grammar" ? 30 : 25);
+        
+        document.getElementById("qType").innerText = isTraining ? `[${q.type.toUpperCase()}] Time Limit: NONE` : `[${q.type.toUpperCase()}] Time Limit: ${timeLimit}s`;
+        document.getElementById("qText").innerText = q.q; 
+        
+        let timeLeft = timeLimit; 
+        document.getElementById("timerVal").innerText = isTraining ? "∞" : timeLeft;
+        
+        currentQuizCorrect = q.c;
+
+        if (quizTimerInterval) clearInterval(quizTimerInterval);
+        if (!isTraining) {
+            quizTimerInterval = setInterval(() => {
+                timeLeft--; document.getElementById("timerVal").innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(quizTimerInterval); document.getElementById("quizBox").classList.add("hidden"); triggerAlert("TIME'S UP!", "#ff0000");
+                    checkSetOrGame();
+                }
+            }, 1000);
+        }
+
+        const grid = document.getElementById("aGrid"); grid.innerHTML = ""; const answers = [...q.a].sort(() => Math.random() - 0.5);
+        currentQuizAnswers = answers;
+        const labels = ["A", "B", "C", "D"];
+        
+        answers.forEach((choice, index) => {
+            const btn = document.createElement("button"); btn.className = "glass p-5 rounded-2xl text-xl sm:text-2xl font-bold hover:bg-cyan-500 hover:text-black transition-all border border-white/5"; 
+            btn.innerText = `${labels[index]}) ${choice}`;
+            btn.onclick = () => submitQuizAnswer(choice);
+            grid.appendChild(btn);
+        });
+    }
+
+    function useByeAbility() {
+        let uGold = quizTargetUser === 1 ? goldP1 : goldP2;
+        if (uGold >= 200) {
+            if(quizTargetUser === 1) goldP1 -= 200; else goldP2 -= 200;
+            if(quizTimerInterval) clearInterval(quizTimerInterval);
+            document.getElementById("quizBox").classList.add("hidden");
+            
+            let actionText = (lastScorer === quizTargetUser) ? "BONUS SECURED!" : "DEFENSE SECURED!";
+            triggerAlert(`BYE USED! ${actionText}`, "#00f2ff");
+            
+            if (lastScorer === 1) score.p1++; else score.p2++;
+            checkSetOrGame();
+        } else { alert("Not enough gold funds (200 required)!"); }
+    }
+
+    function updateUI() {
+        document.getElementById("hudGoldP1").innerText = goldP1.toLocaleString(); document.getElementById("hudGoldP2").innerText = goldP2.toLocaleString();
+        document.getElementById("p1Score").innerText = score.p1; document.getElementById("p2Score").innerText = score.p2;
+        document.getElementById("setsDisplayHUD").innerText = `SETS: ${sets.p1} - ${sets.p2}`;
+        
+        const infoBar = document.getElementById("powerLimitsHUD");
+        if (diff === "2PLAYER") {
+            infoBar.innerHTML = `P1 HAK: 🔥${p1Limits.fire} | ❄️${p1Limits.ice} | 🟡${p1Limits.slow} &nbsp;&nbsp;&bull;&nbsp;&nbsp; P2 HAK: 🔥${p2Limits.fire} | ❄️${p2Limits.ice} | 🟡${p2Limits.slow}`;
+            infoBar.style.color = "#ffd700";
+        } else {
+            infoBar.innerHTML = `⚡ P1: Z,X,C | P2: M,N,B | G: Cheat Gold`;
+            infoBar.style.color = "#9ca3af";
+        }
+
+        localStorage.setItem(KEY.G_P1, goldP1); localStorage.setItem(KEY.G_P2, goldP2); localStorage.setItem(KEY.O_P1, JSON.stringify(ownP1)); localStorage.setItem(KEY.O_P2, JSON.stringify(ownP2)); localStorage.setItem(KEY.A_P1, JSON.stringify(actP1)); localStorage.setItem(KEY.A_P2, JSON.stringify(actP2));
+    }
+
+    function triggerAlert(t, c) { const el = document.getElementById("statusAlert"); el.innerText = t; el.style.color = c; el.classList.remove("hidden"); el.style.opacity = 1; setTimeout(() => { el.style.opacity = 0; setTimeout(() => el.classList.add("hidden"), 300); }, 1500); }
+    function shakeScreen() { canvas.classList.remove("canvas-shake"); void canvas.offsetWidth; canvas.classList.add("canvas-shake"); }
+    function closeGameOver() { document.getElementById("gameOverModal").classList.add("hidden"); document.getElementById("gameBox").classList.add("hidden"); startNewGame(); }
+    
+    function openCustomShop(userIndex) { currentShopUser = userIndex; toggleShop(true); }
+    function toggleShop(s) {
+        document.getElementById("shopMenu").classList.toggle("hidden", !s);
+        if(s) {
+            let uGold = currentShopUser === 1 ? goldP1 : goldP2; let uOwn = currentShopUser === 1 ? ownP1 : ownP2; let uAct = currentShopUser === 1 ? actP1 : actP2; let uName = currentShopUser === 1 ? p1Name : p2Name;
+            document.getElementById("shopOwnerTitle").innerText = `${uName}'s Shop`; document.getElementById("shopGoldDisplay").innerText = uGold.toLocaleString(); const cont = document.getElementById("shopContent"); cont.innerHTML = "";
+            const rarityColors = { "Common": "#b0b0b0", "Rare": "#007bff", "Epic": "#a335ee", "Legendary": "#ff8000", "Mystic": "#ff0000", "Royal": "#ffd700" };
+            SHOP_ITEMS.forEach(item => {
+                const isO = uOwn.includes(item.id), isA = uAct[item.type] === item.id; let btnClass = "neon-btn px-3 py-2 rounded-xl text-xs w-full font-game"; let btnText = item.p.toLocaleString() + " 💰"; let rColor = rarityColors[item.rarity] || "#00f2ff";
+                if (isA) { btnText = "EQUIPPED"; btnClass = "bg-green-600 px-3 py-2 rounded-xl text-xs w-full text-white font-bold opacity-90 cursor-default font-game"; } else if (isO) { btnText = "SELECT"; btnClass = "neon-btn-gold px-3 py-2 rounded-xl text-xs w-full text-black font-bold font-game"; }
+                let itemVisual = item.type === "paddle" ? `<div class="w-4 h-16 rounded shadow-lg mx-auto my-3" style="background:${item.c}"></div>` : `<div class="text-5xl sm:text-6xl my-3 drop-shadow-[0_0_12px_rgba(255,255,255,0.4)]">${item.i}</div>`;
+                cont.innerHTML += `<div class="glass p-4 rounded-3xl flex flex-col items-center border-t-4 relative overflow-hidden" style="border-color:${item.c}"><span class="absolute top-2 right-2 text-[9px] px-2 py-0.5 rounded font-bold text-black uppercase tracking-wider" style="background:${rColor}">${item.rarity || "Skin"}</span>${itemVisual}<div class="font-bold text-white mb-3 text-xs sm:text-sm text-center truncate w-full">${item.name}</div><button class="${btnClass}" onclick="buyShopItem('${item.id}', ${item.p})">${btnText}</button></div>`;
+            });
+        }
+    }
+    function buyShopItem(id, price) {
+        const itemObj = SHOP_ITEMS.find(i=>i.id===id); let uGold = currentShopUser === 1 ? goldP1 : goldP2; let uOwn = currentShopUser === 1 ? ownP1 : ownP2; let uAct = currentShopUser === 1 ? actP1 : actP2;
+        if(uOwn.includes(id)) { uAct[itemObj.type] = id; } else if(uGold >= price) { if(currentShopUser === 1) goldP1 -= price; else goldP2 -= price; uOwn.push(id); uAct[itemObj.type] = id; } else { alert("Insufficient Gold funds!"); return; }
+        updateUI(); toggleShop(true);
+    }
+    function quitAndSave() { const gameStateObj = { goldP1, goldP2, score, sets, diff, p1Name, p2Name, isP2Bot }; localStorage.setItem(KEY.GAME_STATE + "_FULL", JSON.stringify(gameStateObj)); triggerAlert("COMMAND SAVED!", "#00ff00"); setTimeout(() => { if(countdownTimerInterval) clearInterval(countdownTimerInterval); document.getElementById("countdown").classList.add("hidden"); document.getElementById("gameBox").classList.add("hidden"); gameState = "MENU"; showMainMenu(); }, 1000); }
+    function quitToMenu() { localStorage.removeItem(KEY.GAME_STATE + "_FULL"); if(countdownTimerInterval) clearInterval(countdownTimerInterval); if(quizTimerInterval) clearInterval(quizTimerInterval); document.getElementById("countdown").classList.add("hidden"); document.getElementById("quizBox").classList.add("hidden"); document.getElementById("gameBox").classList.add("hidden"); gameState = "MENU"; showMainMenu(); }
+    function toggleHowToPlay(s) { document.getElementById("htpBox").classList.toggle("hidden", !s); }
+    function toggleHistory(s) { 
+        if (!s) { document.getElementById("hMod")?.remove(); return; } 
+        document.getElementById("hMod")?.remove(); 
+        const sortedHistory = [...history]; 
+        let h = `<div id="hMod" class="fixed inset-0 z-[110] bg-black/98 flex items-center justify-center p-4">
+            <div class="glass p-8 sm:p-10 rounded-3xl max-w-4xl w-full">
+                <h3 class="text-3xl font-game text-cyan-400 mb-6 uppercase text-center">Match Archives</h3>
+                <div class="max-h-[50vh] overflow-y-auto">
+                    <table class="w-full text-left text-xs sm:text-sm">
+                        <tr class="text-cyan-200 border-b border-white/20 sticky top-0 bg-black/80 backdrop-blur-md">
+                            <th class="p-3">PILOT</th>
+                            <th class="p-3">MODE</th>
+                            <th class="p-3">SETS</th>
+                            <th class="p-3">RESULT</th>
+                            <th class="p-3 text-center">ACTION</th>
+                        </tr>`;
+        sortedHistory.forEach((x, index) => {
+            let c = x.result === 'W' ? 'text-green-400' : (x.result === 'L' ? 'text-red-400' : 'text-gray-400');
+            h += `<tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+                <td class="p-3 font-bold truncate">${x.name}</td>
+                <td class="p-3 text-[10px] opacity-60 uppercase">${x.mode || 'N/A'}</td>
+                <td class="p-3 text-yellow-400 font-game font-bold">${x.score}</td>
+                <td class="p-3 font-black ${c}">${x.result}</td>
+                <td class="p-3 text-center"><button onclick="deleteHistoryItem(${index})" class="bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white px-2.5 py-1 rounded transition-all text-[10px] font-bold tracking-wider">PURGE</button></td>
+                </tr>`;
+        });
+        h += `</table></div><button class="neon-btn mt-6 w-full py-4 rounded-xl font-game" onclick="toggleHistory(false)">CLOSE ARCHIVES</button></div></div>`;
+        document.body.insertAdjacentHTML('beforeend', h); 
+    }
+    function deleteHistoryItem(index) { history.splice(index, 1); localStorage.setItem(KEY.HIST, JSON.stringify(history)); updateUI(); toggleHistory(true); }
+
+    window.addEventListener("keydown", e => { 
+        keys[e.code] = true; 
+        if (e.code === "KeyG") { goldP1 += 100000; goldP2 += 100000; updateUI(); triggerAlert("+100,000 CHEAT GOLD!", "#ffd700"); } 
+        
+        if (gameState === "QUIZ") {
+            if (e.code === "KeyA" && currentQuizAnswers[0]) submitQuizAnswer(currentQuizAnswers[0]);
+            if (e.code === "KeyB" && currentQuizAnswers[1]) submitQuizAnswer(currentQuizAnswers[1]);
+            if (e.code === "KeyC" && currentQuizAnswers[2]) submitQuizAnswer(currentQuizAnswers[2]);
+            if (e.code === "KeyD" && currentQuizAnswers[3]) submitQuizAnswer(currentQuizAnswers[3]);
+        }
+    });
+    window.addEventListener("keyup", e => { keys[e.code] = false; });
+    window.onload = () => { canvas = document.getElementById("gameCanvas"); ctx = canvas.getContext("2d"); requestAnimationFrame(gameLoop); };
+  </script>
+</body>
+</html>
